@@ -1,0 +1,107 @@
+#ifndef I2C_DEVICE_HPP
+#define I2C_DEVICE_HPP
+
+#include "common.hpp"
+
+namespace stm32_utility {
+
+    struct I2CDevice {
+    public:
+        template <std::size_t SIZE>
+        void transmit_bytes(this I2CDevice const& self, std::array<std::uint8_t, SIZE> const& data) noexcept;
+
+        void transmit_bytes(this I2CDevice const& self, std::uint8_t* const data, std::size_t const size) noexcept;
+
+        void transmit_byte(this I2CDevice const& self, std::uint8_t const data) noexcept;
+
+        template <std::size_t SIZE>
+        std::array<std::uint8_t, SIZE> receive_bytes(this I2CDevice const& self) noexcept;
+
+        void receive_bytes(this I2CDevice const& self, std::uint8_t* const data, std::size_t const size) noexcept;
+
+        std::uint8_t receive_byte(this I2CDevice const& self) noexcept;
+
+        template <std::size_t SIZE>
+        std::array<std::uint8_t, SIZE> read_bytes(this I2CDevice const& self, std::uint8_t const address) noexcept;
+
+        void read_bytes(this I2CDevice const& self,
+                        std::uint8_t const address,
+                        std::uint8_t* const data,
+                        std::size_t const size) noexcept;
+
+        std::uint8_t read_byte(this I2CDevice const& self, std::uint8_t const address) noexcept;
+
+        template <std::size_t SIZE>
+        void write_bytes(this I2CDevice const& self,
+                         std::uint8_t const address,
+                         std::array<std::uint8_t, SIZE> const& data) noexcept;
+
+        void write_bytes(this I2CDevice const& self,
+                         std::uint8_t const address,
+                         std::uint8_t* const data,
+                         std::size_t const size) noexcept;
+
+        void write_byte(this I2CDevice const& self, std::uint8_t const address, std::uint8_t const data) noexcept;
+
+        void bus_scan(this I2CDevice const& self) noexcept;
+
+        void initialize(this I2CDevice const& self) noexcept;
+
+        I2CHandle i2c_bus = nullptr;
+        std::uint16_t dev_address = 0U;
+
+    private:
+        static constexpr std::uint32_t TIMEOUT{100U};
+        static constexpr std::uint32_t SCAN_RETRIES{10U};
+    };
+
+    template <std::size_t SIZE>
+    void I2CDevice::transmit_bytes(this I2CDevice const& self, std::array<std::uint8_t, SIZE> const& data) noexcept
+    {
+        HAL_I2C_Master_Transmit(self.i2c_bus, self.dev_address << 1, (std::uint8_t*)data.data(), data.size(), TIMEOUT);
+    }
+
+    template <std::size_t SIZE>
+    std::array<std::uint8_t, SIZE> I2CDevice::receive_bytes(this I2CDevice const& self) noexcept
+    {
+        auto data = std::array<std::uint8_t, SIZE>{};
+
+        HAL_I2C_Master_Receive(self.i2c_bus, self.dev_address << 1, data.data(), data.size(), TIMEOUT);
+
+        return data;
+    }
+
+    template <std::size_t SIZE>
+    std::array<std::uint8_t, SIZE> I2CDevice::read_bytes(this I2CDevice const& self,
+                                                         std::uint8_t const address) noexcept
+    {
+        auto data = std::array<std::uint8_t, SIZE>{};
+
+        HAL_I2C_Mem_Read(self.i2c_bus,
+                         self.dev_address << 1,
+                         address,
+                         sizeof(address),
+                         data.data(),
+                         data.size(),
+                         TIMEOUT);
+
+        return data;
+    }
+
+    template <std::size_t SIZE>
+    void I2CDevice::write_bytes(this I2CDevice const& self,
+                                std::uint8_t const address,
+                                std::array<std::uint8_t, SIZE> const& data) noexcept
+    {
+        HAL_I2C_Mem_Write(self.i2c_bus,
+                          self.dev_address << 1,
+                          address,
+                          sizeof(address),
+                          (std::uint8_t*)data.data(),
+                          data.size(),
+                          TIMEOUT);
+    }
+
+}; // namespace stm32_utility
+
+#endif // I2C_DEVICE_HPP
