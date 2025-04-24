@@ -3,6 +3,9 @@ build/*
 .vscode
 .vscode/*
 
+app/utility/*
+app/stm32_utility/*
+
 # Prerequisites
 *.d
 
