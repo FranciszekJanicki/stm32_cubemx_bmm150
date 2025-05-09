@@ -5,12 +5,11 @@ target_sources(app PRIVATE
 )
 
 target_include_directories(app PRIVATE 
-    ${CMAKE_SOURCE_DIR}/app/bmm150
+    ${CMAKE_DIR}/stm32cubemx
 )
 
 target_link_libraries(app PRIVATE
     stm32cubemx
-    bmm150
 )
 
 target_compile_options(app PUBLIC
