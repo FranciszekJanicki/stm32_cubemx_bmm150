@@ -30,7 +30,7 @@ BraceWrapping:
   AfterControlStatement: false
   AfterEnum: false
   AfterNamespace: false
-  BeforeCatch: true
+  BeforeCatch: false
   BeforeElse: false
   IndentBraces: false
   AfterFunction: true
@@ -45,7 +45,6 @@ AllowShortLoopsOnASingleLine: false
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: Yes
 AlwaysBreakAfterReturnType: None
-AlwaysBreakAfterDefinitionReturnType: None
 ContinuationIndentWidth: 4
 
 BreakBeforeBraces: Custom
@@ -76,6 +75,5 @@ PointerAlignment: Left
 IndentWrappedFunctionNames: false
 IndentFunctionDeclarationAfterType: true
 Standard: c++20
-
 
 PenaltyReturnTypeOnItsOwnLine: 1000
