@@ -1,8 +1,7 @@
 add_library(bmm150 STATIC)
 
 target_sources(bmm150 PRIVATE 
-    "bmm150.cpp"
-    "bmm150_utility.cpp"
+    "bmm150.c"
 )
 
 target_include_directories(bmm150 PUBLIC 
@@ -12,7 +11,7 @@ target_link_libraries(bmm150 PUBLIC
 )
 
 target_compile_options(bmm150 PUBLIC
-    -std=c++23
+    -std=c23
     -Wall
     -Wextra
     -Wconversion
@@ -30,5 +29,4 @@ target_compile_options(bmm150 PUBLIC
     -Wdouble-promotion
     -Wimplicit-fallthrough
     -Wcast-align
-    -fconcepts
 )
