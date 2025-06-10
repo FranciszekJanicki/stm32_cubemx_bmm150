@@ -140,16 +140,46 @@ bmm150_err_t bmm150_get_mag_data_x_scaled(bmm150_t const* bmm150, float32_t* sca
 bmm150_err_t bmm150_get_mag_data_y_scaled(bmm150_t const* bmm150, float32_t* scaled)
 {
     assert(bmm150 && scaled);
+
+    int16_t raw = {};
+    uint16_t rhall = {};
+
+    bmm150_err_t err = bmm150_get_mag_data_y_raw(bmm150, &raw);
+    err |= bmm150_get_rhall_data(bmm150, &rhall);
+
+    *scaled = bmm150_y_raw_to_scaled(&bmm150->trim_data, rhall, raw);
+
+    return err;
 }
 
 bmm150_err_t bmm150_get_mag_data_z_scaled(bmm150_t const* bmm150, float32_t* scaled)
 {
     assert(bmm150 && scaled);
+
+    int16_t raw = {};
+    uint16_t rhall = {};
+
+    bmm150_err_t err = bmm150_get_mag_data_z_raw(bmm150, &raw);
+    err |= bmm150_get_rhall_data(bmm150, &rhall);
+
+    *scaled = bmm150_z_raw_to_scaled(&bmm150->trim_data, rhall, raw);
+
+    return err;
 }
 
 bmm150_err_t bmm150_get_mag_data_xyz_scaled(bmm150_t const* bmm150, vec3_float32_t* scaled)
 {
     assert(bmm150 && scaled);
+
+    vec3_int16_t raw = {};
+    uint16_t rhall = {};
+
+    bmm150_err_t err = bmm150_get_mag_data_xyz_raw(bmm150, &raw);
+    err |= bmm150_get_rhall_data(bmm150, &rhall);
+
+    *scaled = bmm150_xyz_raw_to_scaled(&bmm150->trim_data, rhall, &raw);
+
+    return err;
 }
 
 bmm150_err_t bmm150_get_mag_data_x_raw(bmm150_t const* bmm150, int16_t* raw)
@@ -469,59 +499,158 @@ bmm150_err_t bmm150_get_int_ctrl1_reg(bmm150_t const* bmm150, bmm150_int_ctrl1_r
 bmm150_err_t bmm150_set_int_ctrl1_reg(bmm150_t const* bmm150, bmm150_int_ctrl1_reg_t const* reg)
 {
     assert(bmm150 && reg);
+
+    uint8_t data = {};
+
+    data |= (reg->data_overrun_en & 0x01U) << 7U;
+    data |= (reg->overflow_int_en & 0x01U) << 6U;
+    data |= (reg->high_int_z_en & 0x01U) << 5U;
+    data |= (reg->high_int_y_en & 0x01U) << 4U;
+    data |= (reg->high_int_x_en & 0x01U) << 3U;
+    data |= (reg->low_int_z_en & 0x01U) << 2U;
+    data |= (reg->low_int_y_en & 0x01U) << 1U;
+    data |= reg->low_int_x_en & 0x01U;
+
+    return bmm150_bus_write(bmm150, BMM150_REG_ADDRESS_INT_CTRL1, &data, sizeof(data));
 }
 
 bmm150_err_t bmm150_get_int_ctrl2_reg(bmm150_t const* bmm150, bmm150_int_ctrl2_reg_t* reg)
 {
     assert(bmm150 && reg);
+
+    uint8_t data = {};
+
+    bmm150_err_t err = bmm150_bus_read(bmm150, BMM150_REG_ADDRESS_INT_CTRL2, &data, sizeof(data));
+
+    reg->data_ready_pin_en = (data >> 7U) & 0x01U;
+    reg->interrupt_pin_en = (data >> 6U) & 0x01U;
+    reg->channel_z = (data >> 5U) & 0x01U;
+    reg->channel_y = (data >> 4U) & 0x01U;
+    reg->channel_x = (data >> 3U) & 0x01U;
+    reg->dr_polarity = (data >> 2U) & 0x01U;
+    reg->interrupt_latch = (data >> 1U) & 0x01U;
+    reg->interrupt_polarity = data & 0x01U;
+
+    return err;
 }
 
 bmm150_err_t bmm150_set_int_ctrl2_reg(bmm150_t const* bmm150, bmm150_int_ctrl2_reg_t const* reg)
 {
     assert(bmm150 && reg);
+
+    uint8_t data = {};
+
+    data |= (reg->data_ready_pin_en & 0x01U) << 7U;
+    data |= (reg->interrupt_pin_en & 0x01U) << 6U;
+    data |= (reg->channel_z & 0x01U) << 5U;
+    data |= (reg->channel_y & 0x01U) << 4U;
+    data |= (reg->channel_x & 0x01U) << 3U;
+    data |= (reg->dr_polarity & 0x01U) << 2U;
+    data |= (reg->interrupt_latch & 0x01U) << 1U;
+    data |= reg->interrupt_polarity & 0x01U;
+
+    return bmm150_bus_write(bmm150, BMM150_REG_ADDRESS_INT_CTRL2, &data, sizeof(data));
 }
 
 bmm150_err_t bmm150_get_int_low_thresh_reg(bmm150_t const* bmm150, bmm150_int_low_thresh_reg_t* reg)
 {
     assert(bmm150 && reg);
+
+    uint8_t data = {};
+
+    bmm150_err_t err =
+        bmm150_bus_read(bmm150, BMM150_REG_ADDRESS_INT_LOW_THRESH, &data, sizeof(data));
+
+    reg->low_threshold = (int8_t)(data & 0xFF);
+
+    return err;
 }
 
 bmm150_err_t bmm150_set_int_low_thresh_reg(bmm150_t const* bmm150,
                                            bmm150_int_low_thresh_reg_t const* reg)
 {
     assert(bmm150 && reg);
+
+    uint8_t data = {};
+
+    data = (uint8_t)(reg->low_threshold & 0xFF);
+
+    return bmm150_bus_write(bmm150, BMM150_REG_ADDRESS_INT_LOW_THRESH, &data, sizeof(data));
 }
 
 bmm150_err_t bmm150_get_int_high_thresh_reg(bmm150_t const* bmm150,
                                             bmm150_int_high_thresh_reg_t* reg)
 {
     assert(bmm150 && reg);
+
+    uint8_t data = {};
+
+    bmm150_err_t err =
+        bmm150_bus_read(bmm150, BMM150_REG_ADDRESS_INT_HIGH_THRESH, &data, sizeof(data));
+
+    reg->high_threshold = (int8_t)(data & 0xFF);
+
+    return err;
 }
 
 bmm150_err_t bmm150_set_int_high_thresh_reg(bmm150_t const* bmm150,
                                             bmm150_int_high_thresh_reg_t const* reg)
 {
     assert(bmm150 && reg);
+
+    uint8_t data = {};
+
+    data = (uint8_t)(reg->high_threshold & 0xFF);
+
+    return bmm150_bus_write(bmm150, BMM150_REG_ADDRESS_INT_HIGH_THRESH, &data, sizeof(data));
 }
 
 bmm150_err_t bmm150_get_axis_rep_xy_reg(bmm150_t const* bmm150, bmm150_axis_rep_xy_reg_t* reg)
 {
     assert(bmm150 && reg);
+
+    uint8_t data = {};
+
+    bmm150_err_t err = bmm150_bus_read(bmm150, BMM150_REG_ADDRESS_AXIS_REP_XY, &data, sizeof(data));
+
+    reg->repetitions_xy = data & 0xFFU;
+
+    return err;
 }
 
 bmm150_err_t bmm150_set_axis_rep_xy_reg(bmm150_t const* bmm150, bmm150_axis_rep_xy_reg_t const* reg)
 {
     assert(bmm150 && reg);
+
+    uint8_t data = {};
+
+    data = reg->repetitions_xy & 0xFFU;
+
+    return bmm150_bus_write(bmm150, BMM150_REG_ADDRESS_AXIS_REP_XY, &data, sizeof(data));
 }
 
 bmm150_err_t bmm150_get_axis_rep_z_reg(bmm150_t const* bmm150, bmm150_axis_rep_z_reg_t* reg)
 {
     assert(bmm150 && reg);
+
+    uint8_t data = {};
+
+    bmm150_err_t err = bmm150_bus_read(bmm150, BMM150_REG_ADDRESS_AXIS_REP_Z, &data, sizeof(data));
+
+    reg->repetitions_z = data & 0xFFU;
+
+    return err;
 }
 
 bmm150_err_t bmm150_set_axis_rep_z_reg(bmm150_t const* bmm150, bmm150_axis_rep_z_reg_t const* reg)
 {
     assert(bmm150 && reg);
+
+    uint8_t data = {};
+
+    data = reg->repetitions_z & 0xFFU;
+
+    return bmm150_bus_write(bmm150, BMM150_REG_ADDRESS_AXIS_REP_Z, &data, sizeof(data));
 }
 
 bmm150_err_t bmm150_send_softreset_cmd(bmm150_t const* bmm150)
